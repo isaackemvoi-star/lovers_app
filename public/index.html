@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lovers Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- LOGIN / SIGNUP SCREEN -->
+  <div id="auth">
+
+    <div class="authBox">
+      <h2>💖 Lovers Chat</h2>
+
+      <input type="email" id="email" placeholder="Enter Email" autocomplete="email">
+      <input type="password" id="password" placeholder="Enter Password" autocomplete="current-password">
+
+      <div class="authButtons">
+        <button type="button" onclick="signup()">Signup</button>
+        <button type="button" onclick="login()">Login</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app" style="display:none;">
+
+    <!-- TOP BAR -->
+    <div class="top">
+      <span id="me"></span>
+
+      <div class="moodBar">
+        <select id="moodSelect" onchange="setMood()">
+          <option value="">Mood</option>
+          <option value="😊 Happy">😊 Happy</option>
+          <option value="😔 Stressed">😔 Stressed</option>
+          <option value="❤️ Miss You">❤️ Miss You</option>
+          <option value="😴 Tired">😴 Tired</option>
+          <option value="🧠 Need Space">🧠 Need Space</option>
+        </select>
+
+        <span id="partnerMood"></span>
+      </div>
+
+      <div>
+        <input type="file" id="profilePic" hidden>
+        <label for="profilePic">🖼</label>
+
+        <button onclick="downloadChat()">💾</button>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- COUPLES FEATURES BAR -->
+    <div class="couplesBar">
+
+      <div class="countdownBox">
+        <input type="date" id="countDate">
+        <button onclick="saveCountdown()">⏳ Save</button>
+        <div id="countdownDisplay"></div>
+      </div>
+
+      <div class="coupleButtons">
+        <button onclick="resolveMode()">🕊️ Resolve</button>
+        <button onclick="saveMemory()">🔒 Memory</button>
+        <button onclick="sendTouch()">🫂 Hug</button>
+        <button onclick="clearRecentMessages()">⏪ Undo</button>
+        <button onclick="generateDate()">🎲 Date</button>
+        <button onclick="sendSOS()">🆘 SOS</button>
+        <button onclick="voiceOnlyMode()">🎙️ Voice</button>
+        <button onclick="breakupMode()">💔 Reset</button>
+      </div>
+
+      <div id="resolveBox"></div>
+      <div id="memoryList"></div>
+      <div id="dateIdea"></div>
+      <div id="plantStatus"></div>
+
+      <div>
+        <select id="loveLanguage" onchange="saveLoveLanguage()">
+          <option value="">Love Language</option>
+          <option value="Words">Words</option>
+          <option value="Touch">Touch</option>
+          <option value="Time">Quality Time</option>
+          <option value="Acts">Acts of Service</option>
+          <option value="Gifts">Gifts</option>
+        </select>
+
+        <button onclick="waterPlant()">🪴 Water Plant</button>
+      </div>
+    </div>
+
+    <!-- MAIN CHAT AREA -->
+    <div class="main">
+
+      <!-- USERS LIST -->
+      <div class="users" id="users"></div>
+
+      <!-- CHAT -->
+      <div class="chat">
+
+        <div class="chatHeader" id="chatUser">
+          Select user
+        </div>
+
+        <!-- CALL CONTROLS -->
+        <div class="callArea">
+          <button onclick="startCall()">📞 Voice Call</button>
+          <button onclick="startVideoCall()">🎥 Video Call</button>
+          <button onclick="endCall()">❌ End</button>
+        </div>
+
+        <!-- VIDEO -->
+        <div class="videoContainer">
+          <video id="localVideo" autoplay muted playsinline></video>
+          <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+
+        <div id="typing"></div>
+
+        <!-- CHAT MESSAGES -->
+        <div id="box"></div>
+
+        <!-- INPUT -->
+        <div class="inputArea">
+
+          <input id="msg" placeholder="Type message...">
+
+          <label class="fileBtn">
+            📸
+            <input type="file" id="imageInput" hidden>
+          </label>
+
+          <label class="fileBtn">
+            🎤
+            <input type="file" id="audioInput" hidden>
+          </label>
+
+          <button onclick="startRecording()">🎤 Rec</button>
+          <button onclick="stopRecording()">⏹</button>
+          <button onclick="send()">➤</button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>
+
