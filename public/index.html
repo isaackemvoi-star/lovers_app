@@ -17,21 +17,11 @@
     href="style.css"
   >
 
-  <link
-    rel="manifest"
-    href="manifest.json"
-  >
-
-  <meta
-    name="theme-color"
-    content="#ff4d6d"
-  >
-
 </head>
 
 <body>
 
-<!-- AUTH -->
+<!-- LOGIN -->
 
 <div id="auth">
 
@@ -68,117 +58,116 @@
 </div>
 
 <!-- APP -->
-<button
-        class="menuBtn"
-        onclick="toggleMenu()"
-      >
-        ⋮
-      </button>
 
 <div
   id="app"
   style="display:none;"
 >
 
-  <!-- TOP BAR -->
+  <!-- SIDEBAR -->
 
-  <div class="top">
+  <div class="sidebar">
 
-    <div class="topLogo">
-      💖 Lovers Chat
-    </div>
+    <!-- TOP -->
 
-    <div class="topActions">
+    <div class="sidebarTop">
 
-      <span id="me"></span>
+      <h2>Chats</h2>
 
-    </div>
+      <div class="topIcons">
 
-  </div>
-
-  <!-- MENU -->
-
-  <div
-    id="menu"
-    class="menu"
-  >
-
-    <button onclick="saveMood()">
-      💭 Set Mood
-    </button>
-
-    <button onclick="saveLoveLanguage()">
-      💝 Love Language
-    </button>
-
-    <button onclick="generateDateIdea()">
-      🎲 Date Idea
-    </button>
-
-    <button onclick="waterPlant()">
-      🪴 Shared Plant
-    </button>
-
-    <button onclick="sendSOS()">
-      🆘 SOS
-    </button>
-
-    <button onclick="downloadChat()">
-      💾 Backup Chat
-    </button>
-
-    <button onclick="voiceOnlyMode()">
-      🎙 Voice Only
-    </button>
-
-    <button onclick="breakupMode()">
-      💔 Breakup Switch
-    </button>
-
-    <button onclick="logout()">
-      🚪 Logout
-    </button>
-
-  </div>
-
-  <!-- MAIN -->
-
-  <div class="main">
-
-    <!-- SIDEBAR -->
-
-    <div class="sidebar">
-
-      <!-- SEARCH -->
-
-      <div class="searchArea">
-
-        <input
-          type="text"
-          placeholder="Search chats"
-          id="searchUser"
+        <button
+          class="menuBtn"
+          onclick="toggleMenu()"
         >
+          ⋮
+        </button>
 
       </div>
 
-      <!-- CHAT LIST -->
+    </div>
 
-      <div
-        id="users"
-        class="users"
-      ></div>
+    <!-- MENU -->
+
+    <div
+      id="menu"
+      class="menu"
+      style="display:none;"
+    >
+
+      <button onclick="saveMood()">
+        💭 Mood
+      </button>
+
+      <button onclick="saveLoveLanguage()">
+        💝 Love Language
+      </button>
+
+      <button onclick="generateDateIdea()">
+        🎲 Date Idea
+      </button>
+
+      <button onclick="waterPlant()">
+        🪴 Shared Plant
+      </button>
+
+      <button onclick="sendSOS()">
+        🆘 SOS
+      </button>
+
+      <button onclick="downloadChat()">
+        💾 Backup
+      </button>
+
+      <button onclick="voiceOnlyMode()">
+        🎙 Voice Only
+      </button>
+
+      <button onclick="breakupMode()">
+        💔 Breakup
+      </button>
+
+      <button onclick="logout()">
+        🚪 Logout
+      </button>
 
     </div>
 
-    <!-- CHAT SECTION -->
+    <!-- SEARCH -->
 
-    <div class="chat">
+    <div class="searchArea">
 
-      <!-- CHAT TOP -->
+      <input
+        type="text"
+        placeholder="Search chats"
+      >
 
-      <div class="chatTop">
+    </div>
 
-        <div class="chatUserInfo">
+    <!-- USERS -->
+
+    <div
+      id="users"
+      class="users"
+    ></div>
+
+  </div>
+
+  <!-- CHAT AREA -->
+
+  <div class="chatArea">
+
+    <!-- CHAT HEADER -->
+
+    <div class="chatHeader">
+
+      <div class="chatLeft">
+
+        <div class="avatar">
+          💖
+        </div>
+
+        <div class="chatInfo">
 
           <div id="chatUser">
             Select Chat
@@ -191,88 +180,90 @@
             </span>
 
             <span id="loveText">
-              💝 Love Language
+              💝 Love
             </span>
 
           </div>
 
         </div>
 
-        <div class="chatButtons">
-
-          <button onclick="startCall()">
-            📞
-          </button>
-
-          <button onclick="startVideoCall()">
-            🎥
-          </button>
-
-        </div>
-
       </div>
 
-      <!-- VIDEO -->
+      <!-- CALL BUTTONS -->
 
-      <div class="videoContainer">
+      <div class="chatActions">
 
-        <video
-          id="localVideo"
-          autoplay
-          muted
-          playsinline
-        ></video>
+        <button onclick="startCall()">
+          📞
+        </button>
 
-        <video
-          id="remoteVideo"
-          autoplay
-          playsinline
-        ></video>
-
-      </div>
-
-      <!-- CHAT BOX -->
-
-      <div id="box"></div>
-
-      <!-- INPUT -->
-
-      <div class="inputArea">
-
-        <label class="fileBtn">
-
-          📸
-
-          <input
-            type="file"
-            id="imageInput"
-            hidden
-          >
-
-        </label>
-
-        <label class="fileBtn">
-
-          🎵
-
-          <input
-            type="file"
-            id="audioInput"
-            hidden
-          >
-
-        </label>
-
-        <input
-          id="msg"
-          placeholder="Type message..."
-        >
-
-        <button onclick="send()">
-          ➤
+        <button onclick="startVideoCall()">
+          🎥
         </button>
 
       </div>
+
+    </div>
+
+    <!-- VIDEO -->
+
+    <div class="videoContainer">
+
+      <video
+        id="localVideo"
+        autoplay
+        muted
+        playsinline
+      ></video>
+
+      <video
+        id="remoteVideo"
+        autoplay
+        playsinline
+      ></video>
+
+    </div>
+
+    <!-- CHAT BOX -->
+
+    <div id="box"></div>
+
+    <!-- INPUT -->
+
+    <div class="inputArea">
+
+      <label class="fileBtn">
+
+        📸
+
+        <input
+          type="file"
+          id="imageInput"
+          hidden
+        >
+
+      </label>
+
+      <label class="fileBtn">
+
+        🎵
+
+        <input
+          type="file"
+          id="audioInput"
+          hidden
+        >
+
+      </label>
+
+      <input
+        id="msg"
+        placeholder="Type message..."
+      >
+
+      <button onclick="send()">
+        ➤
+      </button>
 
     </div>
 
@@ -284,20 +275,6 @@
   type="module"
   src="app.js"
 ></script>
-
-<script>
-
-if (
-  "serviceWorker" in navigator
-) {
-
-  navigator
-    .serviceWorker
-    .register("sw.js");
-
-}
-
-</script>
 
 </body>
 </html>
