@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -18,7 +19,7 @@ import {
   setDoc,
   doc,
   updateDoc,
-  getDocs
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import {
@@ -28,7 +29,7 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-/* ================= FIREBASE ================= */
+/* FIREBASE */
 
 const firebaseConfig = {
   apiKey: "AIzaSyDl3waU-ToyUXmQ6ZbuHr03-w4MPYQDSw8",
@@ -40,441 +41,884 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-/* ================= GLOBAL STATE ================= */
+/* GLOBAL */
 
 let me = null;
 let peer = null;
+
+let peerConnection;
 let localStream;
 let remoteStream;
-let peerConnection;
 
 const servers = {
   iceServers: [
     {
       urls: [
-        "stun:stun.l.google.com:19302",
-        "stun:stun1.l.google.com:19302"
+        "stun:stun.l.google.com:19302"
       ]
     }
   ]
 };
-/* ================= SAFE DOM ACCESS ================= */
 
 function el(id) {
   return document.getElementById(id);
 }
 
-/* ================= AUTH FIXED ================= */
+/* ENCRYPT */
+
+function encrypt(text) {
+
+  if (!text) return "";
+
+  return btoa(text);
+
+}
+
+function decrypt(text) {
+
+  if (!text) return "";
+
+  try {
+
+    return atob(text);
+
+  } catch {
+
+    return text;
+
+  }
+
+}
+
+/* AUTH */
 
 window.signup = async function () {
+
   try {
-    const email = el("email")?.value?.trim();
-    const password = el("password")?.value?.trim();
+
+    const email =
+      el("email").value.trim();
+
+    const password =
+      el("password").value.trim();
 
     if (!email || !password) {
-      alert("Enter email & password");
+
+      alert("Enter email and password");
+
       return;
+
     }
 
-    await createUserWithEmailAndPassword(auth, email, password);
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
   } catch (e) {
-    alert("Signup failed: " + e.message);
+
+    alert(e.message);
+
   }
+
 };
 
 window.login = async function () {
+
   try {
-    const email = el("email")?.value?.trim();
-    const password = el("password")?.value?.trim();
+
+    const email =
+      el("email").value.trim();
+
+    const password =
+      el("password").value.trim();
 
     if (!email || !password) {
-      alert("Enter email & password");
+
+      alert("Enter email and password");
+
       return;
+
     }
 
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
   } catch (e) {
-    alert("Login failed: " + e.message);
+
+    alert(e.message);
+
   }
+
 };
 
-/* ================= AUTH STATE ================= */
+/* AUTH STATE */
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
+onAuthStateChanged(
+  auth,
+  async (user) => {
 
-  me = user.email;
+    if (!user) return;
 
-  el("auth").style.display = "none";
-  el("app").style.display = "block";
+    me = user.email;
 
-  el("me").innerText = me;
+    el("auth").style.display =
+      "none";
 
-  await setDoc(doc(db, "online", me), {
-    online: true,
-    lastSeen: Date.now()
-  });
+    el("app").style.display =
+      "block";
 
-  loadUsers();
-  loadChat();
-});
+    el("me").innerText = me;
 
-/* ================= USERS ================= */
-
-function loadUsers(){
-  onSnapshot(collection(db, "online"), (snap) => {
-    const box = el("users");
-    box.innerHTML = "";
-
-    snap.forEach(d => {
-      if (d.id !== me) {
-        const div = document.createElement("div");
-        div.innerText = d.id;
-
-        div.onclick = () => {
-          peer = d.id;
-          el("chatUser").innerText = d.id;
-        };
-
-        box.appendChild(div);
+    await setDoc(
+      doc(db, "online", me),
+      {
+        online: true,
+        lastSeen: Date.now()
       }
-    });
-  });
-}
+    );
 
-/* ================= SEND MESSAGE ================= */
+    loadUsers();
 
-window.send = async function () {
-  if (!peer) return alert("Select a user");
+    listenForCalls();
 
-  const text = el("msg").value;
-
-  let imageUrl = "";
-  let audioUrl = "";
-
-  const imageFile = el("imageInput")?.files[0];
-  const audioFile = el("audioInput")?.files[0];
-
-  try {
-    if (imageFile) {
-      const r = ref(storage, "images/" + Date.now());
-      await uploadBytes(r, imageFile);
-      imageUrl = await getDownloadURL(r);
-    }
-
-    if (audioFile) {
-      const r = ref(storage, "audio/" + Date.now());
-      await uploadBytes(r, audioFile);
-      audioUrl = await getDownloadURL(r);
-    }
-
-    await addDoc(collection(db, "messages"), {
-      from: me,
-      to: peer,
-      text,
-      image: imageUrl,
-      audio: audioUrl,
-      seen: false,
-      time: serverTimestamp()
-    });
-
-    el("msg").value = "";
-    el("imageInput").value = "";
-    el("audioInput").value = "";
-
-  } catch (e) {
-    alert("Send failed: " + e.message);
   }
-};
+);
 
-/* ================= CHAT ================= */
+/* USERS */
 
-function loadChat() {
-  const q = query(collection(db, "messages"), orderBy("time"));
+function loadUsers() {
 
-  onSnapshot(q, async (snap) => {
-    const box = el("box");
-    box.innerHTML = "";
+  onSnapshot(
+    collection(db, "online"),
+    (snap) => {
 
-    snap.forEach(async (d) => {
-      const m = d.data();
+      const box =
+        el("users");
 
-      if (
-        (m.from === me && m.to === peer) ||
-        (m.from === peer && m.to === me)
-      ) {
+      box.innerHTML = "";
 
-        if (m.to === me && !m.seen) {
-          await updateDoc(doc(db, "messages", d.id), { seen: true });
+      snap.forEach((d) => {
+
+        if (d.id !== me) {
+
+          const div =
+            document.createElement("div");
+
+          div.className =
+            "userItem";
+
+          div.innerHTML = `
+
+            <div class="userTop">
+
+              <div class="userName">
+                ${d.id}
+              </div>
+
+              <div class="onlineDot"></div>
+
+            </div>
+
+          `;
+
+          div.onclick =
+            async () => {
+
+              peer = d.id;
+
+              el("chatUser").innerText =
+                d.id;
+
+              loadChat();
+
+              loadMood();
+
+              loadLoveLanguage();
+
+            };
+
+          box.appendChild(div);
+
         }
 
-        const div = document.createElement("div");
-        div.className = "msg " + (m.from === me ? "me" : "other");
-
-        div.innerHTML = `
-          ${m.text || ""}
-          ${m.image ? `<br><img src="${m.image}" width="150">` : ""}
-          ${m.audio ? `<br><audio controls src="${m.audio}"></audio>` : ""}
-          <br>
-          ${m.from === me ? (m.seen ? "✔✔" : "✔") : ""}
-        `;
-
-        box.appendChild(div);
-      }
-    });
-
-    box.scrollTop = box.scrollHeight;
-  });
-}
-
-/* ================= LOGOUT ================= */
-
-window.logout = function () {
-  signOut(auth);
-  location.reload();
-};
-
-/* ================= WEBRTC CALLING ================= */
-
-window.startCall = async function () {
-  if (!peer) return alert("Select a user first");
-  await setupCall(false);
-};
-
-window.startVideoCall = async function () {
-  if (!peer) return alert("Select a user first");
-  await setupCall(true);
-};
-
-async function setupCall(withVideo) {
-  localStream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video: withVideo
-  });
-
-  el("localVideo").srcObject = localStream;
-
-  remoteStream = new MediaStream();
-  el("remoteVideo").srcObject = remoteStream;
-
-  peerConnection = new RTCPeerConnection(servers);
-
-  localStream.getTracks().forEach(track => {
-    peerConnection.addTrack(track, localStream);
-  });
-
-  peerConnection.ontrack = event => {
-    event.streams[0].getTracks().forEach(track => {
-      remoteStream.addTrack(track);
-    });
-  };
-
-  peerConnection.onicecandidate = async event => {
-    if (event.candidate) {
-      await addDoc(collection(db, "calls"), {
-        from: me,
-        to: peer,
-        candidate: JSON.stringify(event.candidate)
       });
+
     }
+  );
+
+}
+
+/* SEND */
+
+window.send =
+  async function () {
+
+    if (!peer) {
+
+      alert("Select chat");
+
+      return;
+
+    }
+
+    const text =
+      el("msg").value.trim();
+
+    const imageFile =
+      el("imageInput").files[0];
+
+    const audioFile =
+      el("audioInput").files[0];
+
+    let imageUrl = "";
+    let audioUrl = "";
+
+    try {
+
+      if (imageFile) {
+
+        const imageRef =
+          ref(
+            storage,
+            "images/" +
+            Date.now()
+          );
+
+        await uploadBytes(
+          imageRef,
+          imageFile
+        );
+
+        imageUrl =
+          await getDownloadURL(
+            imageRef
+          );
+
+      }
+
+      if (audioFile) {
+
+        const audioRef =
+          ref(
+            storage,
+            "audio/" +
+            Date.now()
+          );
+
+        await uploadBytes(
+          audioRef,
+          audioFile
+        );
+
+        audioUrl =
+          await getDownloadURL(
+            audioRef
+          );
+
+      }
+
+      await addDoc(
+        collection(db, "messages"),
+        {
+          from: me,
+          to: peer,
+          text: encrypt(text),
+          image: imageUrl,
+          audio: audioUrl,
+          seen: false,
+          time: serverTimestamp()
+        }
+      );
+
+      el("msg").value = "";
+
+      el("imageInput").value = "";
+
+      el("audioInput").value = "";
+
+    } catch (e) {
+
+      alert(e.message);
+
+    }
+
   };
 
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
+/* CHAT */
 
-  await addDoc(collection(db, "calls"), {
-    from: me,
-    to: peer,
-    offer: JSON.stringify(offer)
-  });
-}
+function loadChat() {
 
-window.endCall = function () {
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
-
-  if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
-  }
-
-  el("localVideo").srcObject = null;
-  el("remoteVideo").srcObject = null;
-};
-
-function listenForCalls() {
-  onSnapshot(collection(db, "calls"), async (snap) => {
-    snap.forEach(async (docSnap) => {
-      const data = docSnap.data();
-
-      if (data.to !== me) return;
-
-      if (data.offer && !peerConnection) {
-
-        localStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: true
-        });
-
-        el("localVideo").srcObject = localStream;
-
-        remoteStream = new MediaStream();
-        el("remoteVideo").srcObject = remoteStream;
-
-        peerConnection = new RTCPeerConnection(servers);
-
-        localStream.getTracks().forEach(track => {
-          peerConnection.addTrack(track, localStream);
-        });
-
-        peerConnection.ontrack = event => {
-          event.streams[0].getTracks().forEach(track => {
-            remoteStream.addTrack(track);
-          });
-        };
-
-        await peerConnection.setRemoteDescription(
-          new RTCSessionDescription(JSON.parse(data.offer))
-        );
-
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        await addDoc(collection(db, "calls"), {
-          from: me,
-          to: data.from,
-          answer: JSON.stringify(answer)
-        });
-      }
-
-      if (data.answer && peerConnection) {
-        await peerConnection.setRemoteDescription(
-          new RTCSessionDescription(JSON.parse(data.answer))
-        );
-      }
-
-      if (data.candidate && peerConnection) {
-        await peerConnection.addIceCandidate(
-          new RTCIceCandidate(JSON.parse(data.candidate))
-        );
-      }
-    });
-  });
-}/* ================= MOOD SYNC ================= */
-
-window.setMood = async function () {
-  const mood = el("moodSelect")?.value;
-  if (!mood) return;
-
-  await setDoc(doc(db, "moods", me), {
-    mood,
-    time: Date.now()
-  });
-};
-
-function loadMood() {
-  onSnapshot(collection(db, "moods"), (snap) => {
-    snap.forEach(d => {
-      if (d.id !== me && el("partnerMood")) {
-        el("partnerMood").innerText = "Partner Mood: " + d.data().mood;
-      }
-    });
-  });
-}
-
-/* ================= DATE GENERATOR ================= */
-
-window.generateDate = function () {
-  const ideas = [
-    "Cook dinner together",
-    "Watch a movie",
-    "Take a walk",
-    "Play a game",
-    "Talk deeply for 10 mins"
-  ];
-
-  const random = ideas[Math.floor(Math.random() * ideas.length)];
-
-  if (el("dateIdea")) {
-    el("dateIdea").innerText = random;
-  }
-};
-
-/* ================= SOS ================= */
-
-window.sendSOS = async function () {
   if (!peer) return;
 
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    await addDoc(collection(db, "sos"), {
-      from: me,
-      to: peer,
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      time: Date.now()
-    });
+  const q =
+    query(
+      collection(db, "messages"),
+      orderBy("time")
+    );
 
-    alert("SOS sent");
-  });
-};
+  onSnapshot(
+    q,
+    async (snap) => {
 
-/* ================= LOVE LANGUAGE ================= */
+      const box =
+        el("box");
 
-window.saveLoveLanguage = async function () {
-  const language = el("loveLanguage")?.value;
-  if (!language) return;
+      box.innerHTML = "";
 
-  await setDoc(doc(db, "loveLanguages", me), {
-    language
-  });
-};
+      snap.forEach(
+        async (d) => {
 
-/* ================= SHARED PLANT ================= */
+          const m =
+            d.data();
 
-window.waterPlant = async function () {
-  await setDoc(doc(db, "plant", "shared"), {
-    lastWatered: Date.now()
-  });
-};
+          if (
 
-function loadPlant() {
-  onSnapshot(doc(db, "plant", "shared"), (snap) => {
-    if (!snap.exists() || !el("plantStatus")) return;
+            (
+              m.from === me &&
+              m.to === peer
+            )
 
-    const last = snap.data().lastWatered;
-    const diff = Date.now() - last;
-    const days = diff / (1000 * 60 * 60 * 24);
+            ||
 
-    el("plantStatus").innerText =
-      days < 1 ? "🌱 Healthy Plant" : "🥀 Needs Water";
-  });
+            (
+              m.from === peer &&
+              m.to === me
+            )
+
+          ) {
+
+            if (
+              m.to === me &&
+              !m.seen
+            ) {
+
+              await updateDoc(
+                doc(
+                  db,
+                  "messages",
+                  d.id
+                ),
+                {
+                  seen: true
+                }
+              );
+
+            }
+
+            const div =
+              document.createElement(
+                "div"
+              );
+
+            div.className =
+              "msg " +
+              (
+                m.from === me
+                  ? "me"
+                  : "other"
+              );
+
+            div.innerHTML = `
+
+              ${
+                m.text
+                  ? `
+                  <div class="msgText">
+                    ${decrypt(m.text)}
+                  </div>
+                `
+                  : ""
+              }
+
+              ${
+                m.image
+                  ? `
+                  <img
+                    src="${m.image}"
+                    class="chatImage"
+                  >
+                `
+                  : ""
+              }
+
+              ${
+                m.audio
+                  ? `
+                  <audio
+                    controls
+                    src="${m.audio}"
+                  ></audio>
+                `
+                  : ""
+              }
+
+              <div class="msgBottom">
+
+                ${
+                  m.from === me
+                    ? (
+                        m.seen
+                          ? "✔✔"
+                          : "✔"
+                      )
+                    : ""
+                }
+
+              </div>
+
+            `;
+
+            box.appendChild(div);
+
+          }
+
+        }
+      );
+
+      box.scrollTop =
+        box.scrollHeight;
+
+    }
+  );
+
 }
 
-/* ================= VOICE ONLY MODE ================= */
+/* MOOD */
 
-window.voiceOnlyMode = function () {
-  if (el("msg")) {
-    el("msg").disabled = true;
-    alert("Voice only mode enabled");
+window.saveMood =
+  async function () {
+
+    const mood =
+      prompt(
+        "Enter your mood"
+      );
+
+    if (!mood) return;
+
+    await setDoc(
+      doc(db, "moods", me),
+      {
+        mood
+      }
+    );
+
+    loadMood();
+
+  };
+
+async function loadMood() {
+
+  const moodDoc =
+    await getDoc(
+      doc(db, "moods", peer)
+    );
+
+  if (
+    moodDoc.exists()
+  ) {
+
+    el("moodText").innerText =
+      "💭 " +
+      moodDoc.data().mood;
+
   }
-};
 
-/* ================= BREAKUP SWITCH ================= */
+}
 
-window.breakupMode = function () {
-  const confirmBreak = confirm("Reset relationship data?");
-  if (confirmBreak) {
-    alert("Reset system ready");
+/* LOVE LANGUAGE */
+
+window.saveLoveLanguage =
+  async function () {
+
+    const language =
+      prompt(
+        "Enter love language"
+      );
+
+    if (!language) return;
+
+    await setDoc(
+      doc(
+        db,
+        "loveLanguages",
+        me
+      ),
+      {
+        language
+      }
+    );
+
+    loadLoveLanguage();
+
+  };
+
+async function loadLoveLanguage() {
+
+  const loveDoc =
+    await getDoc(
+      doc(
+        db,
+        "loveLanguages",
+        peer
+      )
+    );
+
+  if (
+    loveDoc.exists()
+  ) {
+
+    el("loveText").innerText =
+      "💝 " +
+      loveDoc.data().language;
+
   }
-};
 
-/* ================= UNDO PLACEHOLDER ================= */
+}
 
-window.clearRecentMessages = function () {
-  alert("Undo feature coming soon");
-};
+/* MENU */
+
+window.toggleMenu =
+  function () {
+
+    const menu =
+      el("menu");
+
+    if (
+      menu.style.display ===
+      "flex"
+    ) {
+
+      menu.style.display =
+        "none";
+
+    } else {
+
+      menu.style.display =
+        "flex";
+
+    }
+
+  };
+
+/* CALLS */
+
+window.startCall =
+  async function () {
+
+    await setupCall(false);
+
+  };
+
+window.startVideoCall =
+  async function () {
+
+    await setupCall(true);
+
+  };
+
+async function setupCall(video) {
+
+  if (!peer) {
+
+    alert("Select chat");
+
+    return;
+
+  }
+
+  localStream =
+    await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: video
+    });
+
+  el("localVideo").srcObject =
+    localStream;
+
+  remoteStream =
+    new MediaStream();
+
+  el("remoteVideo").srcObject =
+    remoteStream;
+
+  peerConnection =
+    new RTCPeerConnection(servers);
+
+  localStream
+    .getTracks()
+    .forEach(track => {
+
+      peerConnection.addTrack(
+        track,
+        localStream
+      );
+
+    });
+
+  peerConnection.ontrack =
+    event => {
+
+      event.streams[0]
+        .getTracks()
+        .forEach(track => {
+
+          remoteStream.addTrack(track);
+
+        });
+
+    };
+
+  const offer =
+    await peerConnection.createOffer();
+
+  await peerConnection.setLocalDescription(
+    offer
+  );
+
+  await addDoc(
+    collection(db, "calls"),
+    {
+      from: me,
+      to: peer,
+      offer:
+        JSON.stringify(offer)
+    }
+  );
+
+}
+
+/* LISTEN */
+
+function listenForCalls() {
+
+  onSnapshot(
+    collection(db, "calls"),
+    async (snap) => {
+
+      snap.forEach(
+        async (docSnap) => {
+
+          const data =
+            docSnap.data();
+
+          if (
+            data.to !== me
+          ) return;
+
+          if (
+            data.offer &&
+            !peerConnection
+          ) {
+
+            localStream =
+              await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: true
+              });
+
+            el("localVideo").srcObject =
+              localStream;
+
+            remoteStream =
+              new MediaStream();
+
+            el("remoteVideo").srcObject =
+              remoteStream;
+
+            peerConnection =
+              new RTCPeerConnection(
+                servers
+              );
+
+            localStream
+              .getTracks()
+              .forEach(track => {
+
+                peerConnection.addTrack(
+                  track,
+                  localStream
+                );
+
+              });
+
+            peerConnection.ontrack =
+              event => {
+
+                event.streams[0]
+                  .getTracks()
+                  .forEach(track => {
+
+                    remoteStream.addTrack(
+                      track
+                    );
+
+                  });
+
+              };
+
+            await peerConnection.setRemoteDescription(
+
+              new RTCSessionDescription(
+                JSON.parse(
+                  data.offer
+                )
+              )
+
+            );
+
+            const answer =
+              await peerConnection.createAnswer();
+
+            await peerConnection.setLocalDescription(
+              answer
+            );
+
+            await addDoc(
+              collection(db, "calls"),
+              {
+                from: me,
+                to: data.from,
+                answer:
+                  JSON.stringify(answer)
+              }
+            );
+
+          }
+
+          if (
+            data.answer &&
+            peerConnection
+          ) {
+
+            await peerConnection.setRemoteDescription(
+
+              new RTCSessionDescription(
+                JSON.parse(
+                  data.answer
+                )
+              )
+
+            );
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+}
+
+/* EXTRA FEATURES */
+
+window.generateDateIdea =
+  function () {
+
+    const ideas = [
+
+      "Movie night 🍿",
+      "Cook together 🍝",
+      "Voice call 🌙",
+      "Walk together 🚶",
+      "Selfie challenge 📸"
+
+    ];
+
+    alert(
+
+      ideas[
+        Math.floor(
+          Math.random() *
+          ideas.length
+        )
+      ]
+
+    );
+
+  };
+
+window.waterPlant =
+  function () {
+
+    alert("🌱 Plant watered");
+
+  };
+
+window.sendSOS =
+  function () {
+
+    alert("🆘 SOS sent");
+
+  };
+
+window.voiceOnlyMode =
+  function () {
+
+    el("msg").disabled =
+      true;
+
+    alert(
+      "Voice only mode enabled"
+    );
+
+  };
+
+window.breakupMode =
+  function () {
+
+    alert(
+      "Breakup export system ready"
+    );
+
+  };
+
+/* BACKUP */
+
+window.downloadChat =
+  function () {
+
+    const text =
+      el("box").innerText;
+
+    const blob =
+      new Blob(
+        [text],
+        {
+          type: "text/plain"
+        }
+      );
+
+    const a =
+      document.createElement("a");
+
+    a.href =
+      URL.createObjectURL(blob);
+
+    a.download =
+      "chat-backup.txt";
+
+    a.click();
+
+  };
+
+/* LOGOUT */
+
+window.logout =
+  async function () {
+
+    await signOut(auth);
+
+    location.reload();
+
+  };

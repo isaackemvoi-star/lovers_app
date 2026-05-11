@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lovers Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="auth">
+  <h2>💖 Lovers Chat</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="app" style="display:none;">
+
+  <div class="top">
+    <span id="me"></span>
+    <div>
+      <input type="file" id="profilePic" hidden>
+      <label for="profilePic">🖼</label>
+      <button onclick="downloadChat()">💾</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="users" id="users"></div>
+
+    <div class="chat">
+      <div class="chatHeader" id="chatUser">Select user</div>
+      <div id="typing"></div>
+      <div id="box"></div>
+
+      <div class="inputArea">
+        <input id="msg" placeholder="message...">
+
+        <label class="fileBtn">
+          📸
+          <input type="file" id="imageInput" hidden>
+        </label>
+
+        <label class="fileBtn">
+          🎤
+          <input type="file" id="audioInput" hidden>
+        </label>
+
+        <button onclick="send()">➤</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

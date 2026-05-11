@@ -1,150 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>Lovers Chat</title>
-  <link rel="stylesheet" href="style.css">
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <link
+    rel="manifest"
+    href="manifest.json"
+  >
+
+  <meta
+    name="theme-color"
+    content="#ff4d6d"
+  >
+
 </head>
 
 <body>
 
-  <!-- LOGIN / SIGNUP SCREEN -->
-  <div id="auth">
+<!-- AUTH -->
 
-    <div class="authBox">
-      <h2>💖 Lovers Chat</h2>
+<div id="auth">
 
-      <input type="email" id="email" placeholder="Enter Email" autocomplete="email">
-      <input type="password" id="password" placeholder="Enter Password" autocomplete="current-password">
+  <div class="authBox">
 
-      <div class="authButtons">
-        <button type="button" onclick="signup()">Signup</button>
-        <button type="button" onclick="login()">Login</button>
-      </div>
+    <h2>💖 Lovers Chat</h2>
+
+    <input
+      type="email"
+      id="email"
+      placeholder="Enter Email"
+    >
+
+    <input
+      type="password"
+      id="password"
+      placeholder="Enter Password"
+    >
+
+    <div class="authButtons">
+
+      <button onclick="signup()">
+        Signup
+      </button>
+
+      <button onclick="login()">
+        Login
+      </button>
+
     </div>
 
   </div>
 
-  <!-- MAIN APP -->
-  <div id="app" style="display:none;">
+</div>
 
-    <!-- TOP BAR -->
-    <div class="top">
+<!-- APP -->
+<button
+        class="menuBtn"
+        onclick="toggleMenu()"
+      >
+        ⋮
+      </button>
+
+<div
+  id="app"
+  style="display:none;"
+>
+
+  <!-- TOP BAR -->
+
+  <div class="top">
+
+    <div class="topLogo">
+      💖 Lovers Chat
+    </div>
+
+    <div class="topActions">
+
       <span id="me"></span>
 
-      <div class="moodBar">
-        <select id="moodSelect" onchange="setMood()">
-          <option value="">Mood</option>
-          <option value="😊 Happy">😊 Happy</option>
-          <option value="😔 Stressed">😔 Stressed</option>
-          <option value="❤️ Miss You">❤️ Miss You</option>
-          <option value="😴 Tired">😴 Tired</option>
-          <option value="🧠 Need Space">🧠 Need Space</option>
-        </select>
-
-        <span id="partnerMood"></span>
-      </div>
-
-      <div>
-        <input type="file" id="profilePic" hidden>
-        <label for="profilePic">🖼</label>
-
-        <button onclick="downloadChat()">💾</button>
-        <button onclick="logout()">Logout</button>
-      </div>
     </div>
 
-    <!-- COUPLES FEATURES BAR -->
-    <div class="couplesBar">
+  </div>
 
-      <div class="countdownBox">
-        <input type="date" id="countDate">
-        <button onclick="saveCountdown()">⏳ Save</button>
-        <div id="countdownDisplay"></div>
+  <!-- MENU -->
+
+  <div
+    id="menu"
+    class="menu"
+  >
+
+    <button onclick="saveMood()">
+      💭 Set Mood
+    </button>
+
+    <button onclick="saveLoveLanguage()">
+      💝 Love Language
+    </button>
+
+    <button onclick="generateDateIdea()">
+      🎲 Date Idea
+    </button>
+
+    <button onclick="waterPlant()">
+      🪴 Shared Plant
+    </button>
+
+    <button onclick="sendSOS()">
+      🆘 SOS
+    </button>
+
+    <button onclick="downloadChat()">
+      💾 Backup Chat
+    </button>
+
+    <button onclick="voiceOnlyMode()">
+      🎙 Voice Only
+    </button>
+
+    <button onclick="breakupMode()">
+      💔 Breakup Switch
+    </button>
+
+    <button onclick="logout()">
+      🚪 Logout
+    </button>
+
+  </div>
+
+  <!-- MAIN -->
+
+  <div class="main">
+
+    <!-- SIDEBAR -->
+
+    <div class="sidebar">
+
+      <!-- SEARCH -->
+
+      <div class="searchArea">
+
+        <input
+          type="text"
+          placeholder="Search chats"
+          id="searchUser"
+        >
+
       </div>
 
-      <div class="coupleButtons">
-        <button onclick="resolveMode()">🕊️ Resolve</button>
-        <button onclick="saveMemory()">🔒 Memory</button>
-        <button onclick="sendTouch()">🫂 Hug</button>
-        <button onclick="clearRecentMessages()">⏪ Undo</button>
-        <button onclick="generateDate()">🎲 Date</button>
-        <button onclick="sendSOS()">🆘 SOS</button>
-        <button onclick="voiceOnlyMode()">🎙️ Voice</button>
-        <button onclick="breakupMode()">💔 Reset</button>
-      </div>
+      <!-- CHAT LIST -->
 
-      <div id="resolveBox"></div>
-      <div id="memoryList"></div>
-      <div id="dateIdea"></div>
-      <div id="plantStatus"></div>
+      <div
+        id="users"
+        class="users"
+      ></div>
 
-      <div>
-        <select id="loveLanguage" onchange="saveLoveLanguage()">
-          <option value="">Love Language</option>
-          <option value="Words">Words</option>
-          <option value="Touch">Touch</option>
-          <option value="Time">Quality Time</option>
-          <option value="Acts">Acts of Service</option>
-          <option value="Gifts">Gifts</option>
-        </select>
-
-        <button onclick="waterPlant()">🪴 Water Plant</button>
-      </div>
     </div>
 
-    <!-- MAIN CHAT AREA -->
-    <div class="main">
+    <!-- CHAT SECTION -->
 
-      <!-- USERS LIST -->
-      <div class="users" id="users"></div>
+    <div class="chat">
 
-      <!-- CHAT -->
-      <div class="chat">
+      <!-- CHAT TOP -->
 
-        <div class="chatHeader" id="chatUser">
-          Select user
-        </div>
+      <div class="chatTop">
 
-        <!-- CALL CONTROLS -->
-        <div class="callArea">
-          <button onclick="startCall()">📞 Voice Call</button>
-          <button onclick="startVideoCall()">🎥 Video Call</button>
-          <button onclick="endCall()">❌ End</button>
-        </div>
+        <div class="chatUserInfo">
 
-        <!-- VIDEO -->
-        <div class="videoContainer">
-          <video id="localVideo" autoplay muted playsinline></video>
-          <video id="remoteVideo" autoplay playsinline></video>
-        </div>
+          <div id="chatUser">
+            Select Chat
+          </div>
 
-        <div id="typing"></div>
+          <div class="statusRow">
 
-        <!-- CHAT MESSAGES -->
-        <div id="box"></div>
+            <span id="moodText">
+              💭 Mood
+            </span>
 
-        <!-- INPUT -->
-        <div class="inputArea">
+            <span id="loveText">
+              💝 Love Language
+            </span>
 
-          <input id="msg" placeholder="Type message...">
-
-          <label class="fileBtn">
-            📸
-            <input type="file" id="imageInput" hidden>
-          </label>
-
-          <label class="fileBtn">
-            🎤
-            <input type="file" id="audioInput" hidden>
-          </label>
-
-          <button onclick="startRecording()">🎤 Rec</button>
-          <button onclick="stopRecording()">⏹</button>
-          <button onclick="send()">➤</button>
+          </div>
 
         </div>
+
+        <div class="chatButtons">
+
+          <button onclick="startCall()">
+            📞
+          </button>
+
+          <button onclick="startVideoCall()">
+            🎥
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- VIDEO -->
+
+      <div class="videoContainer">
+
+        <video
+          id="localVideo"
+          autoplay
+          muted
+          playsinline
+        ></video>
+
+        <video
+          id="remoteVideo"
+          autoplay
+          playsinline
+        ></video>
+
+      </div>
+
+      <!-- CHAT BOX -->
+
+      <div id="box"></div>
+
+      <!-- INPUT -->
+
+      <div class="inputArea">
+
+        <label class="fileBtn">
+
+          📸
+
+          <input
+            type="file"
+            id="imageInput"
+            hidden
+          >
+
+        </label>
+
+        <label class="fileBtn">
+
+          🎵
+
+          <input
+            type="file"
+            id="audioInput"
+            hidden
+          >
+
+        </label>
+
+        <input
+          id="msg"
+          placeholder="Type message..."
+        >
+
+        <button onclick="send()">
+          ➤
+        </button>
 
       </div>
 
@@ -152,8 +278,26 @@
 
   </div>
 
-  <script type="module" src="app.js"></script>
+</div>
+
+<script
+  type="module"
+  src="app.js"
+></script>
+
+<script>
+
+if (
+  "serviceWorker" in navigator
+) {
+
+  navigator
+    .serviceWorker
+    .register("sw.js");
+
+}
+
+</script>
 
 </body>
 </html>
-
