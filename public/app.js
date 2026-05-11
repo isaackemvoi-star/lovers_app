@@ -45,6 +45,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+/* PHONE AUTH */
+
 window.recaptchaVerifier =
   new RecaptchaVerifier(
     auth,
@@ -55,8 +60,6 @@ window.recaptchaVerifier =
   );
 
 let confirmationResult;
-const db = getFirestore(app);
-const storage = getStorage(app);
 
 /* GLOBAL */
 
@@ -107,7 +110,7 @@ function decrypt(text) {
 
 }
 
-/* AUTH */
+/* SIGNUP */
 
 window.signup = async function () {
 
@@ -121,7 +124,7 @@ window.signup = async function () {
 
     if (!email || !password) {
 
-      alert("Enter email and password");
+      alert("Enter email/password");
 
       return;
 
@@ -141,6 +144,8 @@ window.signup = async function () {
 
 };
 
+/* LOGIN */
+
 window.login = async function () {
 
   try {
@@ -153,7 +158,7 @@ window.login = async function () {
 
     if (!email || !password) {
 
-      alert("Enter email and password");
+      alert("Enter email/password");
 
       return;
 
@@ -171,7 +176,9 @@ window.login = async function () {
 
   }
 
-};/* PHONE LOGIN */
+};
+
+/* PHONE LOGIN */
 
 window.sendOTP =
   async function () {
@@ -183,7 +190,7 @@ window.sendOTP =
 
       if (!phone) {
 
-        alert("Enter phone number");
+        alert("Enter phone");
 
         return;
 
@@ -226,7 +233,7 @@ window.verifyOTP =
         otp
       );
 
-      alert("Phone login success");
+      alert("Login success");
 
     } catch (e) {
 
@@ -244,15 +251,15 @@ onAuthStateChanged(
 
     if (!user) return;
 
-    me = user.email;
+    me =
+      user.email ||
+      user.phoneNumber;
 
     el("auth").style.display =
       "none";
 
     el("app").style.display =
-      "block";
-
-    el("me").innerText = me;
+      "flex";
 
     await setDoc(
       doc(db, "online", me),
@@ -262,13 +269,23 @@ onAuthStateChanged(
       }
     );
 
-   function loadUsers() {
+    loadUsers();
+
+    listenForCalls();
+
+  }
+);
+
+/* USERS */
+
+function loadUsers() {
 
   onSnapshot(
     collection(db, "online"),
     (snap) => {
 
-      const box = el("users");
+      const box =
+        el("users");
 
       box.innerHTML = "";
 
@@ -305,7 +322,7 @@ onAuthStateChanged(
               </div>
 
               <div class="userLast">
-                Tap to open chat
+                Online
               </div>
 
             </div>
@@ -325,7 +342,9 @@ onAuthStateChanged(
 
             loadLoveLanguage();
 
-            if (window.innerWidth < 800) {
+            if (
+              window.innerWidth < 800
+            ) {
 
               document
                 .querySelector(".chatArea")
@@ -340,8 +359,6 @@ onAuthStateChanged(
         }
 
       });
-
-      /* AUTO OPEN FIRST CHAT */
 
       if (!peer && firstUser) {
 
@@ -604,24 +621,20 @@ window.saveMood =
   async function () {
 
     const mood =
-      prompt(
-        "Enter your mood"
-      );
+      prompt("Mood");
 
     if (!mood) return;
 
     await setDoc(
       doc(db, "moods", me),
-      {
-        mood
-      }
+      { mood }
     );
-
-    loadMood();
 
   };
 
 async function loadMood() {
+
+  if (!peer) return;
 
   const moodDoc =
     await getDoc(
@@ -640,15 +653,13 @@ async function loadMood() {
 
 }
 
-/* LOVE LANGUAGE */
+/* LOVE */
 
 window.saveLoveLanguage =
   async function () {
 
     const language =
-      prompt(
-        "Enter love language"
-      );
+      prompt("Love language");
 
     if (!language) return;
 
@@ -658,16 +669,14 @@ window.saveLoveLanguage =
         "loveLanguages",
         me
       ),
-      {
-        language
-      }
+      { language }
     );
-
-    loadLoveLanguage();
 
   };
 
 async function loadLoveLanguage() {
+
+  if (!peer) return;
 
   const loveDoc =
     await getDoc(
@@ -720,6 +729,8 @@ window.toggleMenu =
 window.startCall =
   async function () {
 
+    if (!peer) return;
+
     await setupCall(false);
 
   };
@@ -727,19 +738,13 @@ window.startCall =
 window.startVideoCall =
   async function () {
 
+    if (!peer) return;
+
     await setupCall(true);
 
   };
 
 async function setupCall(video) {
-
-  if (!peer) {
-
-    alert("Select chat");
-
-    return;
-
-  }
 
   localStream =
     await navigator.mediaDevices.getUserMedia({
@@ -801,8 +806,6 @@ async function setupCall(video) {
   );
 
 }
-
-/* LISTEN */
 
 function listenForCalls() {
 
@@ -925,19 +928,16 @@ function listenForCalls() {
 
 }
 
-/* EXTRA FEATURES */
+/* EXTRA */
 
 window.generateDateIdea =
   function () {
 
     const ideas = [
-
-      "Movie night 🍿",
-      "Cook together 🍝",
-      "Voice call 🌙",
-      "Walk together 🚶",
-      "Selfie challenge 📸"
-
+      "Movie Night 🍿",
+      "Cook Together 🍝",
+      "Long Call 🌙",
+      "Picnic 🌳"
     ];
 
     alert(
@@ -973,18 +973,14 @@ window.voiceOnlyMode =
     el("msg").disabled =
       true;
 
-    alert(
-      "Voice only mode enabled"
-    );
+    alert("Voice only enabled");
 
   };
 
 window.breakupMode =
   function () {
 
-    alert(
-      "Breakup export system ready"
-    );
+    alert("Backup system ready");
 
   };
 
@@ -1000,7 +996,7 @@ window.downloadChat =
       new Blob(
         [text],
         {
-          type: "text/plain"
+          type:"text/plain"
         }
       );
 
