@@ -1,73 +1,221 @@
-<!-- LOGIN -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lovers Chat</title>
 
-<div id="auth">
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="manifest" href="manifest.json">
+
+  <meta name="theme-color" content="#111b21">
+</head>
+
+<body>
+
+<!-- AUTH SCREEN -->
+
+<div id="authPage">
 
   <div class="authBox">
 
-    <h2>💖 Lovers Chat</h2>
-
-    <!-- EMAIL -->
+    <h1>💖 Lovers Chat</h1>
 
     <input
       type="email"
       id="email"
-      placeholder="Enter Email"
+      placeholder="Email"
     >
 
     <input
       type="password"
       id="password"
-      placeholder="Enter Password"
+      placeholder="Password"
     >
 
-    <div class="authButtons">
+    <button onclick="signup()">Create Account</button>
 
-      <button onclick="signup()">
-        Signup
-      </button>
+    <button onclick="login()">Login</button>
 
-      <button onclick="login()">
-        Login
-      </button>
-
-    </div>
-
-    <!-- DIVIDER -->
-
-    <div class="divider">
-      OR
-    </div>
-
-    <!-- PHONE LOGIN -->
-
-    <input
-      type="text"
-      id="phone"
-      placeholder="+254712345678"
-    >
+    <hr>
 
     <div id="recaptcha-container"></div>
 
-    <button
-      class="phoneBtn"
-      onclick="sendOTP()"
+    <input
+      type="text"
+      id="phoneNumber"
+      placeholder="+254..."
     >
-      Send OTP
+
+    <button onclick="sendPhoneCode()">
+      Login With Phone
     </button>
 
     <input
       type="text"
-      id="otp"
+      id="otpCode"
       placeholder="Enter OTP"
     >
 
-    <button
-      class="verifyBtn"
-      onclick="verifyOTP()"
-    >
+    <button onclick="verifyPhoneCode()">
       Verify OTP
     </button>
 
   </div>
 
 </div>
+
+<!-- MAIN APP -->
+
+<div id="app" style="display:none;">
+
+  <!-- SIDEBAR -->
+
+  <div class="sidebar">
+
+    <div class="sidebarTop">
+
+      <h2>Chats</h2>
+
+      <div class="topIcons">
+
+        <button onclick="toggleMenu()">⋮</button>
+
+      </div>
+
+    </div>
+
+    <div class="searchBar">
+
+      <input
+        type="text"
+        placeholder="Search chats"
+        id="searchChats"
+      >
+
+    </div>
+
+    <div id="chatList"></div>
+
+  </div>
+
+  <!-- CHAT AREA -->
+
+  <div class="chatArea">
+
+    <!-- TOP -->
+
+    <div class="chatTop">
+
+      <div class="chatUserArea">
+
+        <div class="avatar"></div>
+
+        <div>
+
+          <div id="chatName">
+            Select Chat
+          </div>
+
+          <div id="moodText">
+            💭 Mood Sync
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="chatActions">
+
+        <button onclick="startCall()">📞</button>
+
+        <button onclick="startVideoCall()">🎥</button>
+
+        <button onclick="toggleMenu()">⋮</button>
+
+      </div>
+
+    </div>
+
+    <!-- MENU -->
+
+    <div id="menuBox" class="menuBox">
+
+      <div onclick="setMood()">💭 Mood Sync</div>
+
+      <div onclick="setLoveLanguage()">💝 Love Language</div>
+
+      <div onclick="sendSOS()">🆘 SOS</div>
+
+      <div onclick="downloadChat()">💾 Backup Chat</div>
+
+      <div onclick="voiceOnlyMode()">🎙 Voice Only</div>
+
+      <div onclick="waterPlant()">🪴 Water Plant</div>
+
+      <div onclick="breakupMode()">💔 Breakup Mode</div>
+
+      <div onclick="logout()">🚪 Logout</div>
+
+    </div>
+
+    <!-- VIDEO -->
+
+    <div class="videoContainer">
+
+      <video
+        id="localVideo"
+        autoplay
+        muted
+        playsinline
+      ></video>
+
+      <video
+        id="remoteVideo"
+        autoplay
+        playsinline
+      ></video>
+
+    </div>
+
+    <!-- MESSAGES -->
+
+    <div id="messages"></div>
+
+    <!-- INPUT -->
+
+    <div class="messageBar">
+
+      <label class="iconBtn">
+
+        ➕
+
+        <input
+          type="file"
+          id="imageInput"
+          hidden
+        >
+
+      </label>
+
+      <input
+        type="text"
+        id="msg"
+        placeholder="Type a message"
+      >
+
+      <button onclick="startRecording()">🎤</button>
+
+      <button onclick="send()">➤</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
