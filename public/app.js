@@ -5,7 +5,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  RecaptchaVerifier,
+  signInWithPhoneNumber
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import {
@@ -43,6 +45,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
+window.recaptchaVerifier =
+  new RecaptchaVerifier(
+    auth,
+    "recaptcha-container",
+    {
+      size: "normal"
+    }
+  );
+
+let confirmationResult;
 const db = getFirestore(app);
 const storage = getStorage(app);
 
@@ -159,7 +171,70 @@ window.login = async function () {
 
   }
 
-};
+};/* PHONE LOGIN */
+
+window.sendOTP =
+  async function () {
+
+    try {
+
+      const phone =
+        el("phone").value.trim();
+
+      if (!phone) {
+
+        alert("Enter phone number");
+
+        return;
+
+      }
+
+      confirmationResult =
+        await signInWithPhoneNumber(
+          auth,
+          phone,
+          window.recaptchaVerifier
+        );
+
+      alert("OTP sent");
+
+    } catch (e) {
+
+      alert(e.message);
+
+    }
+
+  };
+
+window.verifyOTP =
+  async function () {
+
+    try {
+
+      const otp =
+        el("otp").value.trim();
+
+      if (!otp) {
+
+        alert("Enter OTP");
+
+        return;
+
+      }
+
+      await confirmationResult.confirm(
+        otp
+      );
+
+      alert("Phone login success");
+
+    } catch (e) {
+
+      alert(e.message);
+
+    }
+
+  };
 
 /* AUTH STATE */
 
