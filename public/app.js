@@ -187,29 +187,25 @@ onAuthStateChanged(
       }
     );
 
-    loadUsers();
-
-    listenForCalls();
-
-  }
-);
-
-/* USERS */
-
-function loadUsers() {
+   function loadUsers() {
 
   onSnapshot(
     collection(db, "online"),
     (snap) => {
 
-      const box =
-        el("users");
+      const box = el("users");
 
       box.innerHTML = "";
+
+      let firstUser = null;
 
       snap.forEach((d) => {
 
         if (d.id !== me) {
+
+          if (!firstUser) {
+            firstUser = d.id;
+          }
 
           const div =
             document.createElement("div");
@@ -219,39 +215,73 @@ function loadUsers() {
 
           div.innerHTML = `
 
-            <div class="userTop">
+            <div class="userAvatar">
+              💖
+            </div>
 
-              <div class="userName">
-                ${d.id}
+            <div class="userContent">
+
+              <div class="userTop">
+
+                <div class="userName">
+                  ${d.id}
+                </div>
+
               </div>
 
-              <div class="onlineDot"></div>
+              <div class="userLast">
+                Tap to open chat
+              </div>
 
             </div>
 
           `;
 
-          div.onclick =
-            async () => {
+          div.onclick = () => {
 
-              peer = d.id;
+            peer = d.id;
 
-              el("chatUser").innerText =
-                d.id;
+            el("chatUser").innerText =
+              d.id;
 
-              loadChat();
+            loadChat();
 
-              loadMood();
+            loadMood();
 
-              loadLoveLanguage();
+            loadLoveLanguage();
 
-            };
+            if (window.innerWidth < 800) {
+
+              document
+                .querySelector(".chatArea")
+                .classList.add("active");
+
+            }
+
+          };
 
           box.appendChild(div);
 
         }
 
       });
+
+      /* AUTO OPEN FIRST CHAT */
+
+      if (!peer && firstUser) {
+
+        peer = firstUser;
+
+        el("chatUser").innerText =
+          firstUser;
+
+        loadChat();
+
+        loadMood();
+
+        loadLoveLanguage();
+
+      }
 
     }
   );
