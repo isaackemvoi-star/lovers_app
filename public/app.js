@@ -20,8 +20,7 @@ import {
   serverTimestamp,
   setDoc,
   doc,
-  updateDoc,
-  getDoc
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import {
@@ -31,7 +30,7 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-/* FIREBASE */
+/* ================= FIREBASE ================= */
 
 const firebaseConfig = {
   apiKey: "AIzaSyDl3waU-ToyUXmQ6ZbuHr03-w4MPYQDSw8",
@@ -45,89 +44,52 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
+
 const db = getFirestore(app);
+
 const storage = getStorage(app);
 
-/* PHONE AUTH */
+/* ================= GLOBAL ================= */
 
-window.recaptchaVerifier =
-  new RecaptchaVerifier(
-    auth,
-    "recaptcha-container",
-    {
-      size: "normal"
-    }
-  );
-
-let confirmationResult;
-
-/* GLOBAL */
-
-let me = null;
-let peer = null;
+let me = "";
+let peer = "";
 
 let peerConnection;
 let localStream;
 let remoteStream;
 
+let recorder;
+let audioChunks = [];
+
 const servers = {
   iceServers: [
     {
       urls: [
-        "stun:stun.l.google.com:19302"
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302"
       ]
     }
   ]
 };
 
-function el(id) {
+/* ================= HELPERS ================= */
+
+function el(id){
   return document.getElementById(id);
 }
 
-/* ENCRYPT */
+/* ================= SIGNUP ================= */
 
-function encrypt(text) {
+window.signup = async function(){
 
-  if (!text) return "";
+  try{
 
-  return btoa(text);
+    const email = el("email").value.trim();
 
-}
+    const password = el("password").value.trim();
 
-function decrypt(text) {
-
-  if (!text) return "";
-
-  try {
-
-    return atob(text);
-
-  } catch {
-
-    return text;
-
-  }
-
-}
-
-/* SIGNUP */
-
-window.signup = async function () {
-
-  try {
-
-    const email =
-      el("email").value.trim();
-
-    const password =
-      el("password").value.trim();
-
-    if (!email || !password) {
-
-      alert("Enter email/password");
-
-      return;
-
+    if(!email || !password){
+      return alert("Enter email and password");
     }
 
     await createUserWithEmailAndPassword(
@@ -136,32 +98,26 @@ window.signup = async function () {
       password
     );
 
-  } catch (e) {
+  }catch(err){
 
-    alert(e.message);
+    alert(err.message);
 
   }
 
 };
 
-/* LOGIN */
+/* ================= LOGIN ================= */
 
-window.login = async function () {
+window.login = async function(){
 
-  try {
+  try{
 
-    const email =
-      el("email").value.trim();
+    const email = el("email").value.trim();
 
-    const password =
-      el("password").value.trim();
+    const password = el("password").value.trim();
 
-    if (!email || !password) {
-
-      alert("Enter email/password");
-
-      return;
-
+    if(!email || !password){
+      return alert("Enter email and password");
     }
 
     await signInWithEmailAndPassword(
@@ -170,593 +126,381 @@ window.login = async function () {
       password
     );
 
-  } catch (e) {
+  }catch(err){
 
-    alert(e.message);
+    alert(err.message);
 
   }
 
 };
 
-/* PHONE LOGIN */
+/* ================= PHONE LOGIN ================= */
 
-window.sendOTP =
-  async function () {
-
-    try {
-
-      const phone =
-        el("phone").value.trim();
-
-      if (!phone) {
-
-        alert("Enter phone");
-
-        return;
-
-      }
-
-      confirmationResult =
-        await signInWithPhoneNumber(
-          auth,
-          phone,
-          window.recaptchaVerifier
-        );
-
-      alert("OTP sent");
-
-    } catch (e) {
-
-      alert(e.message);
-
-    }
-
-  };
-
-window.verifyOTP =
-  async function () {
-
-    try {
-
-      const otp =
-        el("otp").value.trim();
-
-      if (!otp) {
-
-        alert("Enter OTP");
-
-        return;
-
-      }
-
-      await confirmationResult.confirm(
-        otp
-      );
-
-      alert("Login success");
-
-    } catch (e) {
-
-      alert(e.message);
-
-    }
-
-  };
-
-/* AUTH STATE */
-
-onAuthStateChanged(
+window.recaptchaVerifier = new RecaptchaVerifier(
   auth,
-  async (user) => {
-
-    if (!user) return;
-
-    me =
-      user.email ||
-      user.phoneNumber;
-
-    el("auth").style.display =
-      "none";
-
-    el("app").style.display =
-      "flex";
-
-    await setDoc(
-      doc(db, "online", me),
-      {
-        online: true,
-        lastSeen: Date.now()
-      }
-    );
-
-    loadUsers();
-
-    listenForCalls();
-
+  "recaptcha-container",
+  {
+    size:"normal"
   }
 );
 
-/* USERS */
+window.sendPhoneCode = async function(){
 
-function loadUsers() {
+  try{
 
-  onSnapshot(
-    collection(db, "online"),
-    (snap) => {
+    const phone = el("phoneNumber").value;
 
-      const box =
-        el("users");
-
-      box.innerHTML = "";
-
-      let firstUser = null;
-
-      snap.forEach((d) => {
-
-        if (d.id !== me) {
-
-          if (!firstUser) {
-            firstUser = d.id;
-          }
-
-          const div =
-            document.createElement("div");
-
-          div.className =
-            "userItem";
-
-          div.innerHTML = `
-
-            <div class="userAvatar">
-              💖
-            </div>
-
-            <div class="userContent">
-
-              <div class="userTop">
-
-                <div class="userName">
-                  ${d.id}
-                </div>
-
-              </div>
-
-              <div class="userLast">
-                Online
-              </div>
-
-            </div>
-
-          `;
-
-          div.onclick = () => {
-
-            peer = d.id;
-
-            el("chatUser").innerText =
-              d.id;
-
-            loadChat();
-
-            loadMood();
-
-            loadLoveLanguage();
-
-            if (
-              window.innerWidth < 800
-            ) {
-
-              document
-                .querySelector(".chatArea")
-                .classList.add("active");
-
-            }
-
-          };
-
-          box.appendChild(div);
-
-        }
-
-      });
-
-      if (!peer && firstUser) {
-
-        peer = firstUser;
-
-        el("chatUser").innerText =
-          firstUser;
-
-        loadChat();
-
-        loadMood();
-
-        loadLoveLanguage();
-
-      }
-
-    }
-  );
-
-}
-
-/* SEND */
-
-window.send =
-  async function () {
-
-    if (!peer) {
-
-      alert("Select chat");
-
-      return;
-
-    }
-
-    const text =
-      el("msg").value.trim();
-
-    const imageFile =
-      el("imageInput").files[0];
-
-    const audioFile =
-      el("audioInput").files[0];
-
-    let imageUrl = "";
-    let audioUrl = "";
-
-    try {
-
-      if (imageFile) {
-
-        const imageRef =
-          ref(
-            storage,
-            "images/" +
-            Date.now()
-          );
-
-        await uploadBytes(
-          imageRef,
-          imageFile
-        );
-
-        imageUrl =
-          await getDownloadURL(
-            imageRef
-          );
-
-      }
-
-      if (audioFile) {
-
-        const audioRef =
-          ref(
-            storage,
-            "audio/" +
-            Date.now()
-          );
-
-        await uploadBytes(
-          audioRef,
-          audioFile
-        );
-
-        audioUrl =
-          await getDownloadURL(
-            audioRef
-          );
-
-      }
-
-      await addDoc(
-        collection(db, "messages"),
-        {
-          from: me,
-          to: peer,
-          text: encrypt(text),
-          image: imageUrl,
-          audio: audioUrl,
-          seen: false,
-          time: serverTimestamp()
-        }
+    window.confirmationResult =
+      await signInWithPhoneNumber(
+        auth,
+        phone,
+        window.recaptchaVerifier
       );
 
-      el("msg").value = "";
+    alert("OTP Sent");
 
-      el("imageInput").value = "";
+  }catch(err){
 
-      el("audioInput").value = "";
-
-    } catch (e) {
-
-      alert(e.message);
-
-    }
-
-  };
-
-/* CHAT */
-
-function loadChat() {
-
-  if (!peer) return;
-
-  const q =
-    query(
-      collection(db, "messages"),
-      orderBy("time")
-    );
-
-  onSnapshot(
-    q,
-    async (snap) => {
-
-      const box =
-        el("box");
-
-      box.innerHTML = "";
-
-      snap.forEach(
-        async (d) => {
-
-          const m =
-            d.data();
-
-          if (
-
-            (
-              m.from === me &&
-              m.to === peer
-            )
-
-            ||
-
-            (
-              m.from === peer &&
-              m.to === me
-            )
-
-          ) {
-
-            if (
-              m.to === me &&
-              !m.seen
-            ) {
-
-              await updateDoc(
-                doc(
-                  db,
-                  "messages",
-                  d.id
-                ),
-                {
-                  seen: true
-                }
-              );
-
-            }
-
-            const div =
-              document.createElement(
-                "div"
-              );
-
-            div.className =
-              "msg " +
-              (
-                m.from === me
-                  ? "me"
-                  : "other"
-              );
-
-            div.innerHTML = `
-
-              ${
-                m.text
-                  ? `
-                  <div class="msgText">
-                    ${decrypt(m.text)}
-                  </div>
-                `
-                  : ""
-              }
-
-              ${
-                m.image
-                  ? `
-                  <img
-                    src="${m.image}"
-                    class="chatImage"
-                  >
-                `
-                  : ""
-              }
-
-              ${
-                m.audio
-                  ? `
-                  <audio
-                    controls
-                    src="${m.audio}"
-                  ></audio>
-                `
-                  : ""
-              }
-
-              <div class="msgBottom">
-
-                ${
-                  m.from === me
-                    ? (
-                        m.seen
-                          ? "✔✔"
-                          : "✔"
-                      )
-                    : ""
-                }
-
-              </div>
-
-            `;
-
-            box.appendChild(div);
-
-          }
-
-        }
-      );
-
-      box.scrollTop =
-        box.scrollHeight;
-
-    }
-  );
-
-}
-
-/* MOOD */
-
-window.saveMood =
-  async function () {
-
-    const mood =
-      prompt("Mood");
-
-    if (!mood) return;
-
-    await setDoc(
-      doc(db, "moods", me),
-      { mood }
-    );
-
-  };
-
-async function loadMood() {
-
-  if (!peer) return;
-
-  const moodDoc =
-    await getDoc(
-      doc(db, "moods", peer)
-    );
-
-  if (
-    moodDoc.exists()
-  ) {
-
-    el("moodText").innerText =
-      "💭 " +
-      moodDoc.data().mood;
+    alert(err.message);
 
   }
 
-}
+};
 
-/* LOVE */
+window.verifyPhoneCode = async function(){
 
-window.saveLoveLanguage =
-  async function () {
+  try{
 
-    const language =
-      prompt("Love language");
+    const code = el("otpCode").value;
 
-    if (!language) return;
+    await window.confirmationResult.confirm(code);
 
-    await setDoc(
-      doc(
-        db,
-        "loveLanguages",
-        me
-      ),
-      { language }
-    );
+  }catch(err){
 
-  };
-
-async function loadLoveLanguage() {
-
-  if (!peer) return;
-
-  const loveDoc =
-    await getDoc(
-      doc(
-        db,
-        "loveLanguages",
-        peer
-      )
-    );
-
-  if (
-    loveDoc.exists()
-  ) {
-
-    el("loveText").innerText =
-      "💝 " +
-      loveDoc.data().language;
+    alert(err.message);
 
   }
 
+};
+
+/* ================= AUTH STATE ================= */
+
+onAuthStateChanged(auth, async(user)=>{
+
+  if(!user) return;
+
+  me = user.email || user.phoneNumber;
+
+  el("authPage").style.display = "none";
+
+  el("app").style.display = "flex";
+
+  await setDoc(
+    doc(db,"online",me),
+    {
+      online:true,
+      lastSeen:Date.now()
+    }
+  );
+
+  loadChats();
+
+  listenForCalls();
+
+});
+
+/* ================= LOAD CHATS ================= */
+
+function loadChats(){
+
+  const q = query(
+    collection(db,"messages"),
+    orderBy("time")
+  );
+
+  onSnapshot(q,(snap)=>{
+
+    const users = {};
+
+    snap.forEach(d=>{
+
+      const m = d.data();
+
+      if(m.from === me){
+        users[m.to] = m;
+      }
+
+      if(m.to === me){
+        users[m.from] = m;
+      }
+
+    });
+
+    const box = el("chatList");
+
+    box.innerHTML = "";
+
+    Object.keys(users).forEach(user=>{
+
+      const msg = users[user];
+
+      const div = document.createElement("div");
+
+      div.className = "chatItem";
+
+      div.innerHTML = `
+        <div class="chatAvatar"></div>
+
+        <div class="chatInfo">
+
+          <div class="chatName">
+            ${user}
+          </div>
+
+          <div class="chatPreview">
+            ${msg.text || "Media"}
+          </div>
+
+        </div>
+      `;
+
+      div.onclick = ()=>{
+
+        peer = user;
+
+        el("chatName").innerText = user;
+
+        loadMessages();
+
+        if(window.innerWidth < 900){
+          document.body.classList.add("mobileChatOpen");
+        }
+
+      };
+
+      box.appendChild(div);
+
+    });
+
+  });
+
 }
 
-/* MENU */
+/* ================= LOAD MESSAGES ================= */
 
-window.toggleMenu =
-  function () {
+function loadMessages(){
 
-    const menu =
-      el("menu");
+  const q = query(
+    collection(db,"messages"),
+    orderBy("time")
+  );
 
-    if (
-      menu.style.display ===
-      "flex"
-    ) {
+  onSnapshot(q, async(snap)=>{
 
-      menu.style.display =
-        "none";
+    const box = el("messages");
 
-    } else {
+    box.innerHTML = "";
 
-      menu.style.display =
-        "flex";
+    snap.forEach(async(d)=>{
+
+      const m = d.data();
+
+      if(
+        (m.from === me && m.to === peer) ||
+        (m.from === peer && m.to === me)
+      ){
+
+        if(m.to === me && !m.seen){
+
+          await updateDoc(
+            doc(db,"messages",d.id),
+            {
+              seen:true
+            }
+          );
+
+        }
+
+        const div = document.createElement("div");
+
+        div.className =
+          "msg " +
+          (m.from === me ? "me":"other");
+
+        div.innerHTML = `
+          ${m.text || ""}
+
+          ${
+            m.image
+            ? `<br><img src="${m.image}">`
+            : ""
+          }
+
+          ${
+            m.audio
+            ? `<br><audio controls src="${m.audio}"></audio>`
+            : ""
+          }
+        `;
+
+        box.appendChild(div);
+
+      }
+
+    });
+
+    box.scrollTop = box.scrollHeight;
+
+  });
+
+}
+
+/* ================= SEND ================= */
+
+window.send = async function(){
+
+  if(!peer){
+    return alert("Select a chat");
+  }
+
+  const text = el("msg").value;
+
+  const imageFile =
+    el("imageInput").files[0];
+
+  let imageUrl = "";
+
+  let audioUrl = "";
+
+  try{
+
+    if(imageFile){
+
+      const storageRef = ref(
+        storage,
+        "images/" + Date.now()
+      );
+
+      await uploadBytes(
+        storageRef,
+        imageFile
+      );
+
+      imageUrl =
+        await getDownloadURL(storageRef);
 
     }
 
-  };
+    if(window.recordedBlob){
 
-/* CALLS */
+      const audioRef = ref(
+        storage,
+        "audio/" + Date.now()
+      );
 
-window.startCall =
-  async function () {
+      await uploadBytes(
+        audioRef,
+        window.recordedBlob
+      );
 
-    if (!peer) return;
+      audioUrl =
+        await getDownloadURL(audioRef);
 
-    await setupCall(false);
+      window.recordedBlob = null;
 
-  };
+    }
 
-window.startVideoCall =
-  async function () {
+    await addDoc(
+      collection(db,"messages"),
+      {
+        from:me,
+        to:peer,
+        text,
+        image:imageUrl,
+        audio:audioUrl,
+        seen:false,
+        time:serverTimestamp()
+      }
+    );
 
-    if (!peer) return;
+    el("msg").value = "";
 
-    await setupCall(true);
+    el("imageInput").value = "";
 
-  };
+  }catch(err){
 
-async function setupCall(video) {
+    alert(err.message);
+
+  }
+
+};
+
+/* ================= VOICE RECORD ================= */
+
+window.startRecording = async function(){
 
   localStream =
     await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: video
+      audio:true
+    });
+
+  recorder = new MediaRecorder(localStream);
+
+  audioChunks = [];
+
+  recorder.ondataavailable = e=>{
+    audioChunks.push(e.data);
+  };
+
+  recorder.onstop = ()=>{
+
+    window.recordedBlob =
+      new Blob(audioChunks,{
+        type:"audio/mp3"
+      });
+
+    alert("Voice note ready");
+
+  };
+
+  recorder.start();
+
+};
+
+window.stopRecording = function(){
+
+  if(recorder){
+    recorder.stop();
+  }
+
+};
+
+/* ================= CALLS ================= */
+
+window.startCall = async function(){
+
+  await setupCall(false);
+
+};
+
+window.startVideoCall = async function(){
+
+  await setupCall(true);
+
+};
+
+async function setupCall(video){
+
+  localStream =
+    await navigator.mediaDevices.getUserMedia({
+      audio:true,
+      video:video
     });
 
   el("localVideo").srcObject =
     localStream;
 
-  remoteStream =
-    new MediaStream();
+  remoteStream = new MediaStream();
 
   el("remoteVideo").srcObject =
     remoteStream;
@@ -764,29 +508,46 @@ async function setupCall(video) {
   peerConnection =
     new RTCPeerConnection(servers);
 
-  localStream
-    .getTracks()
-    .forEach(track => {
+  localStream.getTracks().forEach(track=>{
 
-      peerConnection.addTrack(
-        track,
-        localStream
-      );
+    peerConnection.addTrack(
+      track,
+      localStream
+    );
+
+  });
+
+  peerConnection.ontrack = event=>{
+
+    event.streams[0]
+    .getTracks()
+    .forEach(track=>{
+
+      remoteStream.addTrack(track);
 
     });
 
-  peerConnection.ontrack =
-    event => {
+  };
 
-      event.streams[0]
-        .getTracks()
-        .forEach(track => {
+  peerConnection.onicecandidate =
+  async(event)=>{
 
-          remoteStream.addTrack(track);
+    if(event.candidate){
 
-        });
+      await addDoc(
+        collection(db,"calls"),
+        {
+          from:me,
+          to:peer,
+          candidate:JSON.stringify(
+            event.candidate
+          )
+        }
+      );
 
-    };
+    }
+
+  };
 
   const offer =
     await peerConnection.createOffer();
@@ -796,230 +557,259 @@ async function setupCall(video) {
   );
 
   await addDoc(
-    collection(db, "calls"),
+    collection(db,"calls"),
     {
-      from: me,
-      to: peer,
-      offer:
-        JSON.stringify(offer)
+      from:me,
+      to:peer,
+      offer:JSON.stringify(offer)
     }
   );
 
 }
 
-function listenForCalls() {
+/* ================= RECEIVE CALLS ================= */
+
+function listenForCalls(){
 
   onSnapshot(
-    collection(db, "calls"),
-    async (snap) => {
+    collection(db,"calls"),
+    async(snap)=>{
 
-      snap.forEach(
-        async (docSnap) => {
+      snap.forEach(async(docSnap)=>{
 
-          const data =
-            docSnap.data();
+        const data = docSnap.data();
 
-          if (
-            data.to !== me
-          ) return;
+        if(data.to !== me) return;
 
-          if (
-            data.offer &&
-            !peerConnection
-          ) {
+        if(data.offer && !peerConnection){
 
-            localStream =
-              await navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: true
-              });
+          localStream =
+            await navigator.mediaDevices.getUserMedia({
+              audio:true,
+              video:true
+            });
 
-            el("localVideo").srcObject =
-              localStream;
+          el("localVideo").srcObject =
+            localStream;
 
-            remoteStream =
-              new MediaStream();
+          remoteStream =
+            new MediaStream();
 
-            el("remoteVideo").srcObject =
-              remoteStream;
+          el("remoteVideo").srcObject =
+            remoteStream;
 
-            peerConnection =
-              new RTCPeerConnection(
-                servers
-              );
+          peerConnection =
+            new RTCPeerConnection(servers);
 
-            localStream
-              .getTracks()
-              .forEach(track => {
+          localStream.getTracks()
+          .forEach(track=>{
 
-                peerConnection.addTrack(
-                  track,
-                  localStream
-                );
-
-              });
-
-            peerConnection.ontrack =
-              event => {
-
-                event.streams[0]
-                  .getTracks()
-                  .forEach(track => {
-
-                    remoteStream.addTrack(
-                      track
-                    );
-
-                  });
-
-              };
-
-            await peerConnection.setRemoteDescription(
-
-              new RTCSessionDescription(
-                JSON.parse(
-                  data.offer
-                )
-              )
-
+            peerConnection.addTrack(
+              track,
+              localStream
             );
 
-            const answer =
-              await peerConnection.createAnswer();
+          });
 
-            await peerConnection.setLocalDescription(
-              answer
-            );
+          peerConnection.ontrack = event=>{
 
-            await addDoc(
-              collection(db, "calls"),
-              {
-                from: me,
-                to: data.from,
-                answer:
-                  JSON.stringify(answer)
-              }
-            );
+            event.streams[0]
+            .getTracks()
+            .forEach(track=>{
 
-          }
+              remoteStream.addTrack(track);
 
-          if (
-            data.answer &&
-            peerConnection
-          ) {
+            });
 
-            await peerConnection.setRemoteDescription(
+          };
 
-              new RTCSessionDescription(
-                JSON.parse(
-                  data.answer
-                )
-              )
+          await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(
+              JSON.parse(data.offer)
+            )
+          );
 
-            );
+          const answer =
+            await peerConnection.createAnswer();
 
-          }
+          await peerConnection.setLocalDescription(
+            answer
+          );
+
+          await addDoc(
+            collection(db,"calls"),
+            {
+              from:me,
+              to:data.from,
+              answer:JSON.stringify(answer)
+            }
+          );
 
         }
-      );
+
+        if(data.answer && peerConnection){
+
+          await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(
+              JSON.parse(data.answer)
+            )
+          );
+
+        }
+
+        if(data.candidate && peerConnection){
+
+          await peerConnection.addIceCandidate(
+            new RTCIceCandidate(
+              JSON.parse(data.candidate)
+            )
+          );
+
+        }
+
+      });
 
     }
   );
 
 }
 
-/* EXTRA */
+/* ================= END CALL ================= */
 
-window.generateDateIdea =
-  function () {
+window.endCall = function(){
 
-    const ideas = [
-      "Movie Night 🍿",
-      "Cook Together 🍝",
-      "Long Call 🌙",
-      "Picnic 🌳"
-    ];
+  if(peerConnection){
 
-    alert(
+    peerConnection.close();
 
-      ideas[
-        Math.floor(
-          Math.random() *
-          ideas.length
-        )
-      ]
+    peerConnection = null;
 
+  }
+
+  if(localStream){
+
+    localStream
+    .getTracks()
+    .forEach(track=>track.stop());
+
+  }
+
+  el("localVideo").srcObject = null;
+
+  el("remoteVideo").srcObject = null;
+
+};
+
+/* ================= MENU ================= */
+
+window.toggleMenu = function(){
+
+  const menu = el("menuBox");
+
+  menu.style.display =
+    menu.style.display === "block"
+    ? "none"
+    : "block";
+
+};
+
+/* ================= EXTRA FEATURES ================= */
+
+window.setMood = function(){
+
+  const mood =
+    prompt(
+      "Set Mood:\nHappy\nMiss you\nNeed space\nStressed"
     );
 
-  };
+  if(mood){
 
-window.waterPlant =
-  function () {
+    el("moodText").innerText =
+      "💭 " + mood;
 
-    alert("🌱 Plant watered");
+  }
 
-  };
+};
 
-window.sendSOS =
-  function () {
+window.setLoveLanguage = function(){
 
-    alert("🆘 SOS sent");
+  const lang =
+    prompt(
+      "Love Language?"
+    );
 
-  };
+  if(lang){
 
-window.voiceOnlyMode =
-  function () {
+    alert(
+      "Saved: " + lang
+    );
 
-    el("msg").disabled =
-      true;
+  }
 
-    alert("Voice only enabled");
+};
 
-  };
+window.sendSOS = function(){
 
-window.breakupMode =
-  function () {
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
 
-    alert("Backup system ready");
-
-  };
-
-/* BACKUP */
-
-window.downloadChat =
-  function () {
-
-    const text =
-      el("box").innerText;
-
-    const blob =
-      new Blob(
-        [text],
-        {
-          type:"text/plain"
-        }
+      alert(
+        "SOS Sent\nLat: " +
+        pos.coords.latitude
       );
 
-    const a =
-      document.createElement("a");
+    }
+  );
 
-    a.href =
-      URL.createObjectURL(blob);
+};
 
-    a.download =
-      "chat-backup.txt";
+window.downloadChat = function(){
 
-    a.click();
+  alert(
+    "Backup system ready"
+  );
 
-  };
+};
 
-/* LOGOUT */
+window.voiceOnlyMode = function(){
 
-window.logout =
-  async function () {
+  alert(
+    "Voice only mode enabled"
+  );
 
-    await signOut(auth);
+};
 
-    location.reload();
+window.waterPlant = function(){
 
-  };
+  alert(
+    "🌱 Plant watered"
+  );
+
+};
+
+window.breakupMode = function(){
+
+  const ok =
+    confirm(
+      "Reset relationship?"
+    );
+
+  if(ok){
+
+    alert(
+      "Breakup mode ready"
+    );
+
+  }
+
+};
+
+/* ================= LOGOUT ================= */
+
+window.logout = async function(){
+
+  await signOut(auth);
+
+  location.reload();
+
+};
