@@ -1,26 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>Lovers Chat</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 
-  <link rel="manifest" href="manifest.json">
-
-  <meta name="theme-color" content="#111b21">
 </head>
 
 <body>
 
-<!-- AUTH SCREEN -->
+<!-- ================= AUTH PAGE ================= -->
 
 <div id="authPage">
 
   <div class="authBox">
 
-    <h1>💖 Lovers Chat</h1>
+    <div class="logo">
+      💖
+    </div>
+
+    <h2>
+      Lovers Chat
+    </h2>
 
     <input
       type="email"
@@ -34,13 +47,17 @@
       placeholder="Password"
     >
 
-    <button onclick="signup()">Create Account</button>
+    <button onclick="login()">
+      Login
+    </button>
 
-    <button onclick="login()">Login</button>
+    <button onclick="signup()">
+      Create Account
+    </button>
 
-    <hr>
-
-    <div id="recaptcha-container"></div>
+    <div class="divider">
+      OR
+    </div>
 
     <input
       type="text"
@@ -49,7 +66,7 @@
     >
 
     <button onclick="sendPhoneCode()">
-      Login With Phone
+      Send OTP
     </button>
 
     <input
@@ -62,13 +79,15 @@
       Verify OTP
     </button>
 
+    <div id="recaptcha-container"></div>
+
   </div>
 
 </div>
 
-<!-- MAIN APP -->
+<!-- ================= APP ================= -->
 
-<div id="app" style="display:none;">
+<div id="app">
 
   <!-- SIDEBAR -->
 
@@ -76,93 +95,124 @@
 
     <div class="sidebarTop">
 
-      <h2>Chats</h2>
+      <h2>
+        Chats
+      </h2>
 
-      <div class="topIcons">
+      <div class="sidebarIcons">
 
-        <button onclick="toggleMenu()">⋮</button>
+        <button onclick="toggleMenu()">
+          ⋮
+        </button>
 
       </div>
 
     </div>
 
-    <div class="searchBar">
+    <!-- SEARCH -->
+
+    <div class="searchArea">
 
       <input
         type="text"
-        placeholder="Search chats"
-        id="searchChats"
+        id="searchInput"
+        placeholder="Search or start new chat"
       >
 
     </div>
 
-    <div id="chatList"></div>
+    <!-- ADD CHAT -->
+
+    <div class="newChatArea">
+
+      <input
+        type="text"
+        id="newChatEmail"
+        placeholder="Add user by email"
+      >
+
+      <button onclick="addNewChat()">
+        +
+      </button>
+
+    </div>
+
+    <!-- CHAT LIST -->
+
+    <div
+      id="chatList"
+      class="chatList"
+    ></div>
 
   </div>
 
-  <!-- CHAT AREA -->
+  <!-- CHAT WINDOW -->
 
-  <div class="chatArea">
+  <div class="chatWindow">
 
-    <!-- TOP -->
+    <!-- HEADER -->
 
-    <div class="chatTop">
+    <div class="chatHeader">
 
-      <div class="chatUserArea">
+      <div class="headerLeft">
 
-        <div class="avatar"></div>
+        <button
+          class="mobileBack"
+          onclick="
+            document.body.classList.remove(
+              'showChat'
+            )
+          "
+        >
+          ←
+        </button>
+
+        <div class="chatProfile">
+          💖
+        </div>
 
         <div>
 
-          <div id="chatName">
-            Select Chat
+          <div
+            id="chatName"
+            class="chatName"
+          >
+            Select chat
           </div>
 
-          <div id="moodText">
-            💭 Mood Sync
-          </div>
+          <div
+            id="typingStatus"
+            class="typingStatus"
+          ></div>
 
         </div>
 
       </div>
 
-      <div class="chatActions">
+      <div class="headerActions">
 
-        <button onclick="startCall()">📞</button>
+        <button onclick="startCall()">
+          📞
+        </button>
 
-        <button onclick="startVideoCall()">🎥</button>
+        <button onclick="startVideoCall()">
+          🎥
+        </button>
 
-        <button onclick="toggleMenu()">⋮</button>
+        <button onclick="toggleMenu()">
+          ⋮
+        </button>
 
       </div>
 
     </div>
 
-    <!-- MENU -->
+    <!-- CALL AREA -->
 
-    <div id="menuBox" class="menuBox">
-
-      <div onclick="setMood()">💭 Mood Sync</div>
-
-      <div onclick="setLoveLanguage()">💝 Love Language</div>
-
-      <div onclick="sendSOS()">🆘 SOS</div>
-
-      <div onclick="downloadChat()">💾 Backup Chat</div>
-
-      <div onclick="voiceOnlyMode()">🎙 Voice Only</div>
-
-      <div onclick="waterPlant()">🪴 Water Plant</div>
-
-      <div onclick="breakupMode()">💔 Breakup Mode</div>
-
-      <div onclick="logout()">🚪 Logout</div>
-
-    </div>
-
-    <!-- VIDEO -->
-
-    <div class="videoContainer">
+    <div
+      id="callArea"
+      class="callArea"
+    >
 
       <video
         id="localVideo"
@@ -181,15 +231,18 @@
 
     <!-- MESSAGES -->
 
-    <div id="messages"></div>
+    <div
+      id="messages"
+      class="messages"
+    ></div>
 
     <!-- INPUT -->
 
-    <div class="messageBar">
+    <div class="inputArea">
 
-      <label class="iconBtn">
+      <label class="inputBtn">
 
-        ➕
+        📎
 
         <input
           type="file"
@@ -205,9 +258,9 @@
         placeholder="Type a message"
       >
 
-      <button onclick="startRecording()">🎤</button>
-
-      <button onclick="send()">➤</button>
+      <button onclick="send()">
+        ➤
+      </button>
 
     </div>
 
@@ -215,7 +268,48 @@
 
 </div>
 
-<script type="module" src="app.js"></script>
+<!-- MENU -->
+
+<div id="menuBox">
+
+  <button onclick="setMood()">
+    💭 Mood Sync
+  </button>
+
+  <button onclick="setLoveLanguage()">
+    💝 Love Language
+  </button>
+
+  <button onclick="waterPlant()">
+    🌱 Shared Plant
+  </button>
+
+  <button onclick="downloadChat()">
+    💾 Backup Chat
+  </button>
+
+  <button onclick="voiceOnlyMode()">
+    🎙 Voice Only
+  </button>
+
+  <button onclick="sendSOS()">
+    🆘 SOS
+  </button>
+
+  <button onclick="breakupMode()">
+    💔 Breakup Mode
+  </button>
+
+  <button onclick="logout()">
+    🚪 Logout
+  </button>
+
+</div>
+
+<script
+  type="module"
+  src="app.js"
+></script>
 
 </body>
 </html>
