@@ -64,6 +64,7 @@ let me = null;
 let peer = null;
 
 let confirmationResult;
+let typingTimeout;
 
 /* ================= HELPERS ================= */
 
@@ -204,6 +205,7 @@ onAuthStateChanged(
       "flex";
 
     loadUsers();
+    listenTyping();
 
   }
 
@@ -376,6 +378,7 @@ window.send = async function(){
       to:peer,
       text,
       image:imageUrl,
+      seen:false,
       time:serverTimestamp()
 
     }
@@ -385,7 +388,57 @@ window.send = async function(){
   el("msg").value = "";
 
 };
+/* ================= TYPING ================= */
 
+window.typing = async function(){
+
+  if(!peer) return;
+
+  await setDoc(
+
+    doc(
+      db,
+      "typing",
+      me
+    ),
+
+    {
+      from:me,
+      to:peer,
+      typing:true
+    }
+
+  );
+
+  clearTimeout(typingTimeout);
+
+  typingTimeout = setTimeout(
+
+    async()=>{
+
+      await setDoc(
+
+        doc(
+          db,
+          "typing",
+          me
+        ),
+
+        {
+          from:me,
+          to:peer,
+          typing:false
+        }
+
+      );
+
+    },
+
+    1200
+
+  );
+
+};
 /* ================= CHAT ================= */
 
 function loadChat(){
@@ -402,14 +455,14 @@ function loadChat(){
 
     q,
 
-    (snap)=>{
+    async(snap)=>{
 
       const box =
         el("messages");
 
       box.innerHTML = "";
 
-      snap.forEach(docSnap=>{
+      for(const docSnap of snap.docs){
 
         const m =
           docSnap.data();
@@ -429,6 +482,31 @@ function loadChat(){
           )
 
         ){
+
+          /* MARK AS SEEN */
+
+          if(
+
+            m.to === me &&
+            !m.seen
+
+          ){
+
+            await updateDoc(
+
+              doc(
+                db,
+                "messages",
+                docSnap.id
+              ),
+
+              {
+                seen:true
+              }
+
+            );
+
+          }
 
           const div =
             document.createElement("div");
@@ -460,13 +538,39 @@ function loadChat(){
               ""
             }
 
+            <div class="msgBottom">
+
+              ${
+                m.from === me
+
+                ?
+
+                (
+                  m.seen
+
+                  ?
+
+                  "✔✔"
+
+                  :
+
+                  "✔"
+                )
+
+                :
+
+                ""
+              }
+
+            </div>
+
           `;
 
           box.appendChild(div);
 
         }
 
-      });
+      }
 
       box.scrollTop =
         box.scrollHeight;
@@ -476,7 +580,6 @@ function loadChat(){
   );
 
 }
-
 /* ================= MENU ================= */
 
 window.toggleMenu = function(){
@@ -564,3 +667,43 @@ window.logout = async function(){
   location.reload();
 
 };
+/* ================= LISTEN TYPING ================= */
+
+function listenTyping(){
+
+  onSnapshot(
+
+    collection(db,"typing"),
+
+    (snap)=>{
+
+      snap.forEach(docSnap=>{
+
+        const data =
+          docSnap.data();
+
+        if(
+
+          data.from === peer &&
+          data.to === me &&
+          data.typing
+
+        ){
+
+          el("typingStatus").innerText =
+            "typing...";
+
+        }else{
+
+          el("typingStatus").innerText =
+            "";
+
+        }
+
+      });
+
+    }
+
+  );
+
+}

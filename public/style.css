@@ -433,9 +433,9 @@ body{
     color:white;
     font-size:20px;
     cursor:pointer;
-  }
+  }/* ================= NEW CHAT ================= */
 
-}.newChatArea{
+.newChatArea{
 
   display:flex;
   gap:8px;
@@ -467,5 +467,12 @@ body{
   color:white;
   font-size:22px;
   cursor:pointer;
+
+}.msgBottom{
+
+  font-size:11px;
+  margin-top:5px;
+  text-align:right;
+  opacity:0.8;
 
 }
