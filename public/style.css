@@ -475,4 +475,30 @@ body{
   text-align:right;
   opacity:0.8;
 
+}/* ================= REPLY ================= */
+
+.replyBox{
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  padding:10px;
+
+  background:#202c33;
+
+  border-left:4px solid #00a884;
+
+  color:white;
+
+}
+
+.replyBox button{
+
+  border:none;
+  background:none;
+  color:white;
+  font-size:18px;
+  cursor:pointer;
+
 }

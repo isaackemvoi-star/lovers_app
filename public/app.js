@@ -62,6 +62,9 @@ const storage = getStorage(app);
 let me = null;
 
 let peer = null;
+let replyingTo = null;
+
+let replyingText = "";
 
 let confirmationResult;
 let typingTimeout;
@@ -203,10 +206,21 @@ onAuthStateChanged(
 
     el("app").style.display =
       "flex";
+await setDoc(
 
+  doc(db,"online",me),
+
+  {
+
+    online:true,
+    lastSeen:Date.now()
+
+  }
+
+);
     loadUsers();
     listenTyping();
-
+    listenOnline();
   }
 
 );
@@ -281,6 +295,7 @@ function loadUsers(){
         const otherUser =
           data.users.find(
             u => u !== me
+            let onlineText = "offline";
           );
 
         const div =
@@ -291,23 +306,23 @@ function loadUsers(){
 
         div.innerHTML = `
 
-          <div class="chatAvatar">
-            💖
-          </div>
+  <div class="chatAvatar">
+    💖
+  </div>
 
-          <div class="chatInfo">
+  <div class="chatInfo">
 
-            <div class="chatName">
-              ${otherUser}
-            </div>
+    <div class="chatName">
+      ${otherUser}
+    </div>
 
-            <div class="chatPreview">
-              Open conversation
-            </div>
+    <div class="chatPreview">
+      ${onlineText}
+    </div>
 
-          </div>
+  </div>
 
-        `;
+`;
 
         div.onclick = ()=>{
 
@@ -325,6 +340,70 @@ function loadUsers(){
         };
 
         box.appendChild(div);
+
+      });
+
+    }
+
+  );
+
+}
+/* ================= ONLINE ================= */
+
+function listenOnline(){
+
+  onSnapshot(
+
+    collection(db,"online"),
+
+    (snap)=>{
+
+      snap.forEach(docSnap=>{
+
+        const data =
+          docSnap.data();
+
+        const elements =
+          document.querySelectorAll(
+            ".chatItem"
+          );
+
+        elements.forEach(item=>{
+
+          if(
+
+            item.innerText.includes(
+              docSnap.id
+            )
+
+          ){
+
+            const preview =
+              item.querySelector(
+                ".chatPreview"
+              );
+
+            if(data.online){
+
+              preview.innerText =
+                "online";
+
+              preview.style.color =
+                "#00a884";
+
+            }else{
+
+              preview.innerText =
+                "last seen recently";
+
+              preview.style.color =
+                "#8696a0";
+
+            }
+
+          }
+
+        });
 
       });
 
@@ -386,6 +465,32 @@ window.send = async function(){
   );
 
   el("msg").value = "";
+
+};
+/* ================= REPLY ================= */
+
+window.replyMessage = function(text,id){
+
+  replyingTo = id;
+
+  replyingText = text;
+
+  el("replyBox").style.display =
+    "flex";
+
+  el("replyText").innerText =
+    text;
+
+};
+
+window.cancelReply = function(){
+
+  replyingTo = null;
+
+  replyingText = "";
+
+  el("replyBox").style.display =
+    "none";
 
 };
 /* ================= TYPING ================= */
@@ -706,4 +811,29 @@ function listenTyping(){
 
   );
 
-}
+}/* ================= OFFLINE ================= */
+
+window.addEventListener(
+
+  "beforeunload",
+
+  async()=>{
+
+    if(!me) return;
+
+    await setDoc(
+
+      doc(db,"online",me),
+
+      {
+
+        online:false,
+        lastSeen:Date.now()
+
+      }
+
+    );
+
+  }
+
+);
